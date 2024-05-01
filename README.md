@@ -1,4 +1,5 @@
-Introduction : 
+Introduction 
+
 Le paysage informatique évolue rapidement, et la nécessité pour les entreprises de gérer efficacement leurs activités avec des applications est devenue incontournable. Historiquement, chaque application nécessitait son propre serveur dédié, engendrant des coûts élevés en matière d'infrastructure. L'avènement des machines virtuelles a permis de réduire ces coûts en permettant à plusieurs applications de partager un même serveur physique. Cependant, les machines virtuelles ne sont pas sans inconvénients, car elles consomment des ressources considérables pour démarrer et nécessitent un système d'exploitation distinct, entraînant des inefficacités et des vulnérabilités potentielles.
 
 Face à ces limitations, la conteneurisation est apparue comme une solution alternative. Elle isole les applications sans nécessiter de système d'exploitation distinct, ce qui les rend plus légères et plus rapides à exécuter. De plus, les conteneurs facilitent la division des applications monolithiques en services plus petits et plus agiles, favorisant ainsi une architecture modulaire et évolutive.
@@ -50,66 +51,98 @@ La topologie proposée comporte deux générateurs de requêtes http l’un visa
 
 Pour adresser ces conteneurs nous accédons aux fichiers de configuration (edit conf) sur l’interface de GNS3.
 Nous citons les images dockers suivantes :
+
 • ajnouri-ab les générateurs de requêtes HTTP avec les adresses 177.177.177.2/24 et 177.177.177.3/24.
+
 • lbext-1 est le load balancer externe avec deux interfaces, l’interface eth0 avec l’adresse 177.177.177.1/24 destinée aux générateurs (clients) et l’interface eth1 avec l’adresse 10.10.10.254/24,
+
 • lbint1-1 est le load balancer interne destiné à la première région /Images avec l’adresse 10.10.10.253/24 pour l’interface eth0, 10.10.9.1/24 pour eth1.
+
 • lbint2-1 est le load balancer interne destiné à la deuxième région /Videos avec l’adresse 10.10.10.252/24 pour l’interface eth0, 10.10.8.1/24 pour eth1.
+
 • les images ajnouri-nginx représentent nos serveurs web, trois pour chaque région, chaque serveur considère l’interface interne des équilibreurs de sa région comme une passerelle.
 
 
-Configuration des conteneurs équilibreurs de charge : 
+Configuration des conteneurs équilibreurs de charge
+
 Pour construire une image docker nginx pour être un load balancer nous avons procédé ainsi :
+
 ⚫ ouvrir le shell de la gns3 VM
+
 ⚫ créer un fichier nommé nginx.conf où nous introduisons les configurations nécessaires
+
 ⚫ vu que c’est un load balancer de couche 7 on définit d’abord un contexte http
+
 ⚫ dedans nous créons deux autres contextes, le premier appelé upstream pour définir notre backend de serveurs suivi du nom de ce backend, chaque serveur est défini par l’attribut server suivi par son adresse IP et le port sur lequel il écoute le trafic,
+
 ⚫ pour appliquer des ‘health checks’ sur ces serveurs nous utilisons l’attribut Max_fails (le nombre maximum de connexions échouées avant que le serveur est marqué indisponible) et Fail_timeout (le temps pour lequel le nombre spécifié de tentatives de communication échouées avec le serveur doit se produire), ainsi que le nom de l’algorithme à appliquer (par défaut Round Robin).
+
 ⚫ Le deuxième contexte appelé server pour définir le serveur virtuel vu par les clients, avec l’attribut listen pour dire sur quel numéro de port l’équilibreur attend le trafic (80,8080 ou 443 pour le L7), et le contexte Location / (le path a consulté par l’équilibreur pour appliquer le routage avancé), ce contexte contiendra l’attribut Proxy_pass http:// nom-du-backend; pour envoyer les requêtes à l’upstream correspondantes ace path.
+
 ⚫ Après cela nous créons un dockerfile que nous utilisons pour construire cette image et intégrer notre configuration ce fichier aura la forme :
 • FROM nomdu docker image
 • COPY fichier-contenant-la-config chemain-de-ce-ficher-dans-l ’image-officielle-de-ce- conteneur (figure 16)
+
 ⚫ Et en fin nous avons qu’à lancer la commande Docker build -t nom-du-conteneur, et qui va chercher un dockerfile sur notre machine et faire un PULL de cette image du docker repository publique et intégrer nos configurations.
+
 Pour nos équilibreurs nous avons défini pour l’équilibreur externe deux contextes location un pour les requêtes demandant des images (/images) et l’autre pour des vidéos (/vidéos) qui passe en proxy_pass au backend correspondant soit pour le lbint1 ou lbint2 (figure 15).
+
 Pour la 2éme région nous avons défini du weighted Round Robin tel que le serveur d’adresse 10.10.8.4 (weight=3) recevra trois fois plus de requêtes que 10.10.8.2 et le serveur 10.10.8.3 (weight=2) le double du nombre de requêtes transmises au 10.10.8.2 (figure 14).
+
 Tous nos équilibreurs écoutent le trafic sur le port 80 vu que c’est du HTTP donc on définit l’attribut Listen 80.
+
 Voici les fichiers nginx.conf correspondants à nos équilibreurs de charge :
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/257c9ac5-0dcc-4079-b570-40c97197f22c)
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/f2053dfd-de83-4419-bcb1-68cd8b1702bf)
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/8a4f5491-7376-4645-8eec-75ea59a57854)
+
 Ensuite, pour chaque conteneur nous créons le dockerfile et nous construisons notre image :
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/c357675e-e3fc-4780-9aec-2d4aa3b31843)
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/63b2e48b-2d85-423c-83be-a0fe5be5fbf5)
 
 
-Déroulement du scénario : 
+Déroulement du scénario 
+
 Nous comptons d’abord lancer un des deux générateurs en envoyant des requêtes de type 177.177.177.1/images/test.php ensuite 177.177.177.1/videos/test.php et pour surveiller la distribution de la charge selon le path nous lançons wireshark sur les liens entre l’interface interne du lbext et les deux équilibreurs internes.
+
 Nous lançons 100 requêtes visant les images donc le lbext va choisir comme adresse ip destination 10.10.10.253 et l’autre équilibreur ne recevra aucune requête. Donc sur le générateur ajnouri-ab-1 nous appliquons la commande ab -n 100 177.177.177.1/images/test.php
+
 Et nous lançons la capture de paquet avec un filtre de ip source 10.10.10.254 et protocole http et voici une capture du résultat :
+
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/fd4f0f28-7675-43e5-b47c-8bc4b5363817)
 Nous remarquons qu’aucune requête n’est envoyer à l’équilibreur lbint2-1 (10.10.10.252) donc nous concluons que le routage avancé (de couche 7) est fonctionnel.
 Pour tester la distribution dans les régions on applique la même méthode mais cette fois en lançant les deux générateurs en même temps et faire une capture de paquets entre l’interface interne des lbint et les serveurs web.
+
 Les figures 19 et 20 montrent les résultats de la capture pour 100 requêtes envoyées des deux générateurs. Pour la capture de round robin on voit bien que l’équilibreur boucle sur le backend en envoyant une requête à un serveur et passe à l’autre.
+
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/4ae5a855-51d6-4da7-9f86-7e12c1313560)
 Mais pour la région 2 ce n’est pas le cas, on envoie 3 fois plus de requêtes au serveur d’adresse 10.10.8.4 et deux fois plus à 10.10.8.3 qu’au serveur 10.10.8.2 (figure 20).
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/e9fda0bd-5937-4cc3-af0c-876677437aff)
 En se basant sur ces captures, nous avons obtenu les diagrammes suivants :
+
 Pour la première zone selon la figure 21, tous les serveurs ont reçu ‘presque‘ le même nombre de requêtes (puisque nous avons envoyé 100 requêtes distribués sur 3 serveurs) alors le premier serveur qui possède l’adresse ip 10.10.9.2 a reçu 34 requêtes, le deuxième et le troisième ont tous les deux reçu 33 requêtes.
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/8185ee35-09aa-4c7f-9a04-93a53c837774)
 Par-contre selon la figure 22, dans la deuxième région, chaque serveur a reçu un nombre de requêtes différent du nombre de requêtes reçues des autres serveurs à cause des poids différents associés à chaque’un d’eux.
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/b35f4d86-76cf-40c9-a990-da5057389bf6)
 Le serveur qui possède l’adresse 10.10.9.4 reçoit plus de requêtes par rapport aux deux autres serveurs car il possède un poids (weight = 3) et donc il reçoit les requêtes trois fois de plus par rapport au serveur configuré avec le poids (weight =1).
+
 Le serveur configuré avec l’adresse ip 10.10.8.3 et avec le poids (weight=2) reçoit le double de ce que reçoit le serveur qui possède l’adresse10.10.8.2 et qui est configuré avec le poids (weight=1).
 
 
-Topologie du deuxième scénario : 
+Topologie du deuxième scénario 
+
 La topologie réalisée comporte un générateur de requêtes, deux équilibreurs de charge l’un sous forme de VM et l’autre de conteneur et un backend de quatre serveurs web.
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/3a1bfae3-3a65-4d93-859c-94b8f0dbfc9e)
 Configurations des deux équilibreurs de charge
 La VM bitnami-nginx possède un OS Linux Debian et gns3 VM possède un OS Linux Ubuntu. Les deux VMs ( la vm qui exécute le conteneur LB et la vm bitnami-nginx sont dotés de la même puissance ( 1Gb de RAM, 2 vCPU).
 Pour configurer les adresses IP des interfaces de la VM bitnami-nginx nous avons qu’à :
+
 ⚫ accéder au fichier /etc/network/intefaces en tant qu’administrateur
+
 ⚫ saisir les adresse de nos deux interfaces
+
 ⚫ redémarrer le service networking (sur Debian avec sudo /etc/init.d/networking restart).
+
 Les deux types d’équilibreurs appliquent du Round Robin sur les quatre serveurs web, pour configurer le fichier nginx.conf sur la VM bitnami-nginx nous accédons au chemin /etc/nginx/nginx.conf.
 Nous allons basculer entre les deux équilibreurs en branchant à tour de rôle celui à tester, le teste consiste à envoyer progressivement des requêtes HTTP du générateur (clic droit sur le conteneur, Aux console pour accéder au CLI et saisir la commande ab -n c --- 10.10.10.1/test.php) et à chaque envoi relever trois métriques, la quantité de RAM et CPU consommé par le processus d’équilibrage de charge en utilisant la commande Top -pid (figure 24), ainsi que le temps pris pour traiter toutes les requêtes depuis les statistiques fournies par le générateur Apache Benchmark sur son terminal après la fin du teste «Time taken for tests» (figure 25).
 On augmente le nombre de requêtes (-n) chaque fois de 5000 avec une concurrence (-c) de 100 requêtes envoyées à la fois, nous avons remarqué que pour ces valeurs nous aurons des résultats plus constants en termes de CPU et de durée de teste pour pouvoir les relever, nous avons obtenu les valeurs de cpu fournies en calculant la moyenne de valeurs affichées par la commande top -pid chaque seconde.
@@ -118,7 +151,8 @@ Ci-dessous un exemple de l’affichage des valeurs de nos trois métriques.
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/07cad244-885e-4c16-9f0c-22745c2f822d)
 
 
-Estimation des performances : 
+Estimation des performances
+
 Une comparaison des statistiques des résultats obtenus entre les deux technologies.
 La figure 26 représente le pourcentage de consommation du CPU par le processus qui s’exécute sur le conteneur.
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/4db8d28a-e73d-46e3-9578-5156d5cf57d5)
@@ -135,5 +169,6 @@ Et enfin, le graphe de consommation de RAM par la VM.
 Ainsi nous affirmons nos hypothèses, la consommation de CPU varie entre 20.1% et 22.2% alors que la VM 29.8% et 33.3%, la consommation de RAM bascule entre 0,3% et 0,4% pour le conteneur, 0,4% et 0,5% pour la VM, et le maximum de temps pris pour le test est de 191,3s pour le conteneur et 224,7s pour la VM.
 
 
-Conclusion : 
+Conclusion
+
 Nous avons effectué dans ce chapitre l’implémentation et la simulation de nos deux scénarios présentés, également nous avons démontrer que la consommation des ressources est plus optimale en déployant un conteneur qu’avec une machine virtuelle, ce qui conclue notre projet.
