@@ -1,3 +1,11 @@
+Introduction : 
+Le paysage informatique évolue rapidement, et la nécessité pour les entreprises de gérer efficacement leurs activités avec des applications est devenue incontournable. Historiquement, chaque application nécessitait son propre serveur dédié, engendrant des coûts élevés en matière d'infrastructure. L'avènement des machines virtuelles a permis de réduire ces coûts en permettant à plusieurs applications de partager un même serveur physique. Cependant, les machines virtuelles ne sont pas sans inconvénients, car elles consomment des ressources considérables pour démarrer et nécessitent un système d'exploitation distinct, entraînant des inefficacités et des vulnérabilités potentielles.
+
+Face à ces limitations, la conteneurisation est apparue comme une solution alternative. Elle isole les applications sans nécessiter de système d'exploitation distinct, ce qui les rend plus légères et plus rapides à exécuter. De plus, les conteneurs facilitent la division des applications monolithiques en services plus petits et plus agiles, favorisant ainsi une architecture modulaire et évolutive.
+
+Cependant, l'augmentation du trafic sur internet pose de nouveaux défis, notamment en termes de charge de travail sur les serveurs. Pour résoudre ce problème, l'équilibrage de charge devient crucial. Notre projet se concentre précisément sur la conteneurisation d'un service d'équilibrage de charge, offrant ainsi une solution agile et efficace pour gérer la répartition du trafic sur les serveurs de manière optimale.
+
+
 Environnement logiciel
 
 GNS3 (Graphical Network Simulator) est un logiciel open source qui simule des réseaux complexes tout en se rapprochant le plus possible du fonctionnement des réseaux réels. Tout cela sans avoir de matériel réseau physique dédié tel que des routeurs et des commutateurs.
