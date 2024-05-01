@@ -1,5 +1,5 @@
 Environnement logiciel
-1 GNS3
+
 GNS3 (Graphical Network Simulator) est un logiciel open source qui simule des réseaux complexes tout en se rapprochant le plus possible du fonctionnement des réseaux réels. Tout cela sans avoir de matériel réseau physique dédié tel que des routeurs et des commutateurs.
 Ce logiciel fournit une interface utilisateur graphique intuitive pour concevoir et configurer des réseaux virtuels, il fonctionne sur du matériel PC traditionnel et peut être utilisé sur plusieurs systèmes d'exploitation, notamment Windows, Linux et MacOS.
 Afin de fournir des simulations complètes et précises, GNS3 utilise en fait les émulateurs suivants pour exécuter les mêmes systèmes d'exploitation que dans les réseaux réels.
@@ -7,19 +7,20 @@ Afin de fournir des simulations complètes et précises, GNS3 utilise en fait le
 • Virtuelbox/Vmware : exécute des systèmes d’exploitation de bureau et de serveur.
 • Docker daemon : crée, exécute, tire des centenaires depuis le registre de référentiel docker Hub
 • Qemu : un émulateur de machine open source générique, il exécute Cisco ASA, PIX et IPS.
-Nous l’équipons avec une GNS3 VM pour des situations lorsqu’on utilise Windows ou Mac OS. L'équipe de développement de GNS3 a créé un moyen léger et robuste de créer des topologies GNS3 qui évite plusieurs problèmes courants rencontrés lors de l'utilisation d'une installation locale de GNS3[34].
+Nous l’équipons avec une GNS3 VM pour des situations lorsqu’on utilise Windows ou Mac OS. L'équipe de développement de GNS3 a créé un moyen léger et robuste de créer des topologies GNS3 qui évite plusieurs problèmes courants rencontrés lors de l'utilisation d'une installation locale de GNS3.
 Pour réaliser l’architecture du premier scénario nous avons utilisé les programmes suivants tous sous forme de docker containers :
-2 Nginx
+
 Nginx est un serveur web open-source qui assure les services suivants :
 Proxy inversé avec mise en cache, IPv6, Équilibrage de charge L4 et L7 avec les algorithmes Round Robin, weighetd, IP Hash et ‘Least Connections’, ‘WebSockets’, Gestion des fichiers statiques, des fichiers d’index et de l’indexation automatique, TLS/SSL.
 Il a été créé par Igor Sysoev, avec sa première sortie publique en octobre 2004. Igor a d’abord conçu le logiciel comme une réponse au problème de performance liée à la gestion de 10.000 connexions simultanées(C10k).
 Nginx surpasse souvent d’autres serveurs web populaires dans les tests de benchmarks, en particulier dans les situations avec un contenu statique et/ou des requêtes simultanées élevées.
-Nginx est conçu pour offrir une fiable utilisation de la mémoire et une grande simultanéité. Plutôt que de créer de nouveaux processus pour chaque requête Web, Nginx utilise une approche asynchrone et événementielle où les requêtes sont traitées dans un seul thread [35].
-3 Apache benchmark
+Nginx est conçu pour offrir une fiable utilisation de la mémoire et une grande simultanéité. Plutôt que de créer de nouveaux processus pour chaque requête Web, Nginx utilise une approche asynchrone et événementielle où les requêtes sont traitées dans un seul thread .
+
 Ab (apache benchmark) est un utilitaire qui nous permet de tester les performances de notre serveur http. Il a été conçu pour nous donner une idée du degré de performances de notre installation de serveurs. Il nous permet en particulier de déterminer le nombre de requêtes que notre installation est capable de servir par seconde.
 La syntaxe nécessaire pour générer des requêtes HTTP est la suivante :
 ab -n (le Nombre de requêtes à effectuer au cours du test de performances) -c (Nombre de requêtes à effectuer simultanément. Par défaut, une seule requête est effectuée à la fois) -g (Enregistre toutes les valeurs mesurées dans un fichier 'gnuplot' ou TSV (valeurs séparées par des tabulations)) http[s]://nom- serveur[:port]/chemin[36].
-4 Wireshark
+
+Wireshark
 Un analyseur de paquets open source (GNU) populaire. Ses décodeurs de protocoles permettent d’interpréter le trafic du réseau.
 Conçu en 1997-1998 par Gerald Combs sous le nom historique de “Ethereal”. Il est repris en 2006 sous le nom moderne de “Wireshark”. En 2008, Wireshark sort en version 1.0 et en 2015 en version avec une nouvelle interface graphique. Disponible sur linux et windows [37].
 Remarques : tous ces conteneurs sont exécutés sur la machines virtuelle de gns3 qui possède un processeur core virtuel, une mémoire RAM de trois Gb et qui est exécuté sur l’hyperviseur VMware.
@@ -29,12 +30,12 @@ Les machines virtuelles Bitnami contiennent un système d'exploitation Linux min
 Cette machine virtuelle possède un processeur virtuel, d’un Gb de ram et qui est exécuté sur l’hyperviseur Vmware.
 
 
-motivation de choix de l’environnement logiciel
+motivation de choix de l’environnement logiciel :
 ⚫ nginx vient sur ses deux formes machine virtuelle (Bitnami VM) et conteneur donc pouvoir comparer ces technologies en terme de performance et optimisation, et peut être un serveur web, un load balancer et un proxy/reverse proxy et peut appliquer des Health checks et du SSL offload (fonctionnalités implémentées par les solutions LB des fournisseurs cloud) alors simuler une application traitée par des serveur web en appliquant du load balencing pour assurer sa disponibilité ce qui forme nos deux scénarios.
 ⚫ Apache benchmark pour simuler les requêtes HTTP de multiples clients.
 ⚫ Wireshark pour s’assurer de la bonne distribution des requêtes aux serveurs web par les LB.
 
-Topologie du premier scénario
+Topologie du premier scénario :
 La topologie proposée comporte deux générateurs de requêtes http l’un visant des images et l’autre de vidéos, un LB externe, deux LB internes, ainsi que deux backends de serveurs web.
 
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/6b1f80bf-228d-4766-8b55-edaa9ea16ce6)
@@ -48,7 +49,7 @@ Nous citons les images dockers suivantes :
 • les images ajnouri-nginx représentent nos serveurs web, trois pour chaque région, chaque serveur considère l’interface interne des équilibreurs de sa région comme une passerelle.
 
 
-Configuration des conteneurs équilibreurs de charge
+Configuration des conteneurs équilibreurs de charge : 
 Pour construire une image docker nginx pour être un load balancer nous avons procédé ainsi :
 ⚫ ouvrir le shell de la gns3 VM
 ⚫ créer un fichier nommé nginx.conf où nous introduisons les configurations nécessaires
@@ -72,7 +73,7 @@ Ensuite, pour chaque conteneur nous créons le dockerfile et nous construisons n
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/63b2e48b-2d85-423c-83be-a0fe5be5fbf5)
 
 
-Déroulement du scénario
+Déroulement du scénario : 
 Nous comptons d’abord lancer un des deux générateurs en envoyant des requêtes de type 177.177.177.1/images/test.php ensuite 177.177.177.1/videos/test.php et pour surveiller la distribution de la charge selon le path nous lançons wireshark sur les liens entre l’interface interne du lbext et les deux équilibreurs internes.
 Nous lançons 100 requêtes visant les images donc le lbext va choisir comme adresse ip destination 10.10.10.253 et l’autre équilibreur ne recevra aucune requête. Donc sur le générateur ajnouri-ab-1 nous appliquons la commande ab -n 100 177.177.177.1/images/test.php
 Et nous lançons la capture de paquet avec un filtre de ip source 10.10.10.254 et protocole http et voici une capture du résultat :
@@ -92,7 +93,7 @@ Le serveur qui possède l’adresse 10.10.9.4 reçoit plus de requêtes par rapp
 Le serveur configuré avec l’adresse ip 10.10.8.3 et avec le poids (weight=2) reçoit le double de ce que reçoit le serveur qui possède l’adresse10.10.8.2 et qui est configuré avec le poids (weight=1).
 
 
-Topologie du deuxième scénario
+Topologie du deuxième scénario : 
 La topologie réalisée comporte un générateur de requêtes, deux équilibreurs de charge l’un sous forme de VM et l’autre de conteneur et un backend de quatre serveurs web.
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/3a1bfae3-3a65-4d93-859c-94b8f0dbfc9e)
 Configurations des deux équilibreurs de charge
@@ -109,7 +110,7 @@ Ci-dessous un exemple de l’affichage des valeurs de nos trois métriques.
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/07cad244-885e-4c16-9f0c-22745c2f822d)
 
 
-Estimation des performances
+Estimation des performances : 
 Une comparaison des statistiques des résultats obtenus entre les deux technologies.
 La figure 26 représente le pourcentage de consommation du CPU par le processus qui s’exécute sur le conteneur.
 ![image](https://github.com/walidgithub088/Conteneurisation-d-un-service-d-quilibrage-de-charge/assets/151946258/4db8d28a-e73d-46e3-9578-5156d5cf57d5)
@@ -126,5 +127,5 @@ Et enfin, le graphe de consommation de RAM par la VM.
 Ainsi nous affirmons nos hypothèses, la consommation de CPU varie entre 20.1% et 22.2% alors que la VM 29.8% et 33.3%, la consommation de RAM bascule entre 0,3% et 0,4% pour le conteneur, 0,4% et 0,5% pour la VM, et le maximum de temps pris pour le test est de 191,3s pour le conteneur et 224,7s pour la VM.
 
 
-Conclusion
+Conclusion : 
 Nous avons effectué dans ce chapitre l’implémentation et la simulation de nos deux scénarios présentés, également nous avons démontrer que la consommation des ressources est plus optimale en déployant un conteneur qu’avec une machine virtuelle, ce qui conclue notre projet.
